@@ -1,0 +1,170 @@
+Public Const PROGRAM_SHEET As String = "program"
+Public Const DATA_SHEET As String = "dataSheet"
+Public Const THIS_WORK_BOOK_NAME As String = "createData.xlsm"
+Public Const NIKKEI_225_DATA As String = "nikkei225.xls"
+Public Const DATA_DIRECTORY_PATH As String = "nikkei"
+Public printFlag As Boolean
+Public lastLine As Integer
+
+
+
+Private Function createData(dataFileName As String, maturity As Integer)
+    'To get Datas
+    
+    Dim sheetToSave As Worksheet
+    Set sheetToSave = ActiveWorkbook.Worksheets(DATA_SHEET)
+    
+    'Open dataFile
+    Workbooks.Open Filename:=(ThisWorkbook.Path & "\" & DATA_DIRECTORY_PATH & "\" & dataFileName), ReadOnly:=True
+    Workbooks(dataFileName).Activate
+   
+   'List Name
+    Dim startRow As Integer
+    Dim ws As Worksheet
+    Dim i As Integer
+    Dim fr As Range
+    
+    'Set fr = Columns("a").Find(After:=Cells(3, 1), What:="")
+    'lastLine = Cells(Rows.count, 1).End(xlUp).Row
+    'ActiveSheet.Cells.SpecialCells(xlLastCell).Row
+    i = lastLine
+    For Each ws In ActiveWorkbook.Worksheets
+        If Not i = startRow Then
+            ws.Activate
+            sheetToSave.Cells(i, 1).Value = ws.Name
+            'Copy Line
+            Set fr = Columns("i").Find(What:=CStr(maturity), Lookat:=xlWhole)
+            If fr Is Nothing Then
+                Set fr = Columns("i").Find(What:=CStr(maturity + 1), Lookat:=xlWhole)
+            End If
+            If fr Is Nothing Then
+                Set fr = Columns("i").Find(What:=CStr(maturity - 1), Lookat:=xlWhole)
+            End If
+            If fr Is Nothing Then
+                Set fr = Columns("i").Find(What:=CStr(maturity - 2), Lookat:=xlWhole)
+            End If
+            
+            If fr Is Nothing Then
+                'MsgBox "Not Found"
+                i = i - 1
+            Else
+                sheetToSave.Cells(i, 2).Value = fr.Row
+                ws.Range(Cells(fr.Row, 1), Cells(fr.Row, 9)).Copy
+                Workbooks(THIS_WORK_BOOK_NAME).Activate
+                sheetToSave.Activate
+                sheetToSave.Range(Cells(i, 2), Cells(i, 10)).Select
+                Selection.PasteSpecial Paste:=xlValues
+            End If
+        End If
+        i = i + 1
+    Next ws
+    lastLine = i
+    
+    Workbooks(dataFileName).Activate
+    Application.DisplayAlerts = False           '確認メッセージを表示しない
+    ActiveWorkbook.Close                        '閉じる
+End Function
+
+Private Function setNikkei225()
+    Dim sheetToSave As Worksheet
+    Set sheetToSave = ActiveWorkbook.Worksheets(DATA_SHEET)
+    
+    'Open dataFile
+    Workbooks.Open Filename:=(ThisWorkbook.Path & "\" & DATA_DIRECTORY_PATH & "\" & NIKKEI_225_DATA), ReadOnly:=True
+    Workbooks(THIS_WORK_BOOK_NAME).Activate
+    
+    Dim i As Integer
+    Dim fr As Range
+    i = 1
+    Do While (1)
+        If sheetToSave.Cells(i, 2).Value = Empty Then Exit Do
+        Set fr = Workbooks(NIKKEI_225_DATA).Worksheets("nikkei225").Columns("c").Find(What:=sheetToSave.Cells(i, 3).Value)
+        If fr Is Nothing Then
+        Else
+            sheetToSave.Cells(i, 11).Value = fr.Offset(0, 1)
+        End If
+        i = i + 1
+    Loop
+    
+    
+    Workbooks(NIKKEI_225_DATA).Activate
+    Application.DisplayAlerts = False           '確認メッセージを表示しない
+    ActiveWorkbook.Close                        '閉じる
+
+End Function
+
+Sub start()
+    Dim dataFileNames(16) As String
+    dataFileNames(0) = "200301-200305.xls"
+    dataFileNames(1) = "200307-200311.xls"
+    dataFileNames(2) = "200401-200405.xls"
+    dataFileNames(3) = "200407-200411.xls"
+    dataFileNames(4) = "200501-200505.xls"
+    dataFileNames(5) = "200507-200511.xls"
+    dataFileNames(6) = "200601-200606.xls"
+    dataFileNames(7) = "200607-200612.xls"
+    dataFileNames(8) = "200701-200706.xls"
+    dataFileNames(9) = "200707-200712.xls"
+    dataFileNames(10) = "200801-200806.xls"
+    dataFileNames(11) = "200807-200812.xls"
+    dataFileNames(12) = "200901-200906.xls"
+    dataFileNames(13) = "200907-200912.xls"
+    dataFileNames(14) = "201001-201006.xls"
+    dataFileNames(15) = "201007-201012.xls"
+    lastLine = 1
+    For i = 0 To 15
+        Call createData(dataFileNames(i), 30)
+    Next
+    
+End Sub
+
+Sub setStockPrice()
+    Call setNikkei225
+End Sub
+
+Sub startAllMaturity()
+    Dim sheetToSave As Worksheet
+    Set sheetToSave = ActiveWorkbook.Worksheets(DATA_SHEET)
+    
+    Dim programSheet As Worksheet
+    Set programSheet = ActiveWorkbook.Worksheets(PROGRAM_SHEET)
+    
+    Dim csvPrefix As String
+
+    Dim maturity As Integer
+    maturity = programSheet.Cells(19, 2).Value
+    
+    sheetToSave.Select
+    Cells.ClearContents
+    Cells.Clear
+    
+    csvPrefix = ThisWorkbook.Path + "\" + ThisWorkbook.Name
+    csvPrefix = Left(csvPrefix, Len(csvPrefix) - 5)
+
+    Dim dataFileNames(16) As String
+    dataFileNames(0) = "200301-200305.xls"
+    dataFileNames(1) = "200307-200311.xls"
+    dataFileNames(2) = "200401-200405.xls"
+    dataFileNames(3) = "200407-200411.xls"
+    dataFileNames(4) = "200501-200505.xls"
+    dataFileNames(5) = "200507-200511.xls"
+    dataFileNames(6) = "200601-200606.xls"
+    dataFileNames(7) = "200607-200612.xls"
+    dataFileNames(8) = "200701-200706.xls"
+    dataFileNames(9) = "200707-200712.xls"
+    dataFileNames(10) = "200801-200806.xls"
+    dataFileNames(11) = "200807-200812.xls"
+    dataFileNames(12) = "200901-200906.xls"
+    dataFileNames(13) = "200907-200912.xls"
+    dataFileNames(14) = "201001-201006.xls"
+    dataFileNames(15) = "201007-201012.xls"
+    lastLine = 1
+    For j = 0 To 15
+        Call createData(dataFileNames(j), maturity)
+    Next
+    Call setNikkei225
+    sheetToSave.Activate
+    ActiveWorkbook.SaveAs Filename:=csvPrefix + "_" + CStr(maturity) + ".csv" _
+    , FileFormat:=xlCSV
+End Sub
+

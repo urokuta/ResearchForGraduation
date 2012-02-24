@@ -1,0 +1,71 @@
+Public Const SAVE_SHEET As String = "adjustedSheet"
+Public Const DATA_SHEET As String = "dataSheet"
+
+Private Function calcData()
+    'To get Datas
+    
+    Dim sheetToSave As Worksheet
+    Set sheetToSave = ActiveWorkbook.Worksheets(SAVE_SHEET)
+    
+    Dim dataSheet As Worksheet
+    Set dataSheet = ActiveWorkbook.Worksheets(DATA_SHEET)
+    
+    Dim i As Integer
+    Dim tmpIV As Double
+    
+    Dim counter As Integer
+    Dim firstK As Integer
+    Dim lastK As Integer
+    Dim dataSheetLine As Integer
+    dataSheetLine = 1
+    
+    i = 1
+    tmpIV = 0
+    counter = 0
+    firstK = 0
+    lastK = dataSheet.Cells(1, 1).Value
+    Do While 1
+        If dataSheet.Cells(i, 1).Value = "" Then
+            Exit Do
+        End If
+        
+        counter = counter + 1
+        firstK = dataSheet.Cells(i, 1).Value
+        If Not firstK = lastK Then
+            sheetToSave.Cells(dataSheetLine, 1).Value = lastK
+            sheetToSave.Cells(dataSheetLine, 2).Value = tmpIV / counter
+            
+            tmpIV = 0
+            counter = 0
+            dataSheetLine = dataSheetLine + 1
+        End If
+        tmpIV = tmpIV + dataSheet.Cells(i, 5).Value
+        lastK = firstK
+        
+        i = i + 1
+    Loop
+    
+End Function
+
+Private Function removeZero()
+    Dim dataSheet As Worksheet
+    Set dataSheet = ActiveWorkbook.Worksheets(DATA_SHEET)
+    
+    dataSheet.Activate
+    Dim R As Range
+    Do
+        Set R = dataSheet.Range("A:A").Find(What:="0", LookAt:=xlWhole)
+        If R Is Nothing Then Exit Do
+        R.EntireRow.Delete
+    Loop
+        
+End Function
+
+Sub calcStart()
+    Call calcData
+End Sub
+
+Sub removeStart()
+    Call removeZero
+End Sub
+
